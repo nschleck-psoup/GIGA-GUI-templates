@@ -16,7 +16,34 @@
 #include <Arduino_H7_Video.h>           // Arduino video output manager
 #include <Arduino_GigaDisplayTouch.h>   // Arduino GIGA touch input manager
 
-//~~~~~~~~~~~~~~~~ LVGL Declarations ~~~~~~~~~~~~~~~~~~~~~~~~//
+#include <WiFi.h>
+#include <WiFiUdp.h>
+#include <mbed_mktime.h>
+#include "arduino_secrets.h" // WiFi connection details
+
+//~~~~~~~~~~ WiFi Variables ~~~~~~~~~~~~//
+  int timezone = -5;
+  int status = WL_IDLE_STATUS;
+
+  char ssid[] = SECRET_SSID;
+  char pass[] = SECRET_PASS;
+
+  int keyIndex = 0;  // your network key index number (needed only for WEP)
+  unsigned int localPort = 2390;  // local port to listen for UDP packets
+
+  constexpr auto timeServer{ "pool.ntp.org" };
+  const int NTP_PACKET_SIZE = 48;  // NTP timestamp is in the first 48 bytes of the message
+
+  byte packetBuffer[NTP_PACKET_SIZE];  // buffer to hold incoming and outgoing packets
+
+  // A UDP instance to let us send and receive packets over UDP
+  WiFiUDP Udp;
+
+//~~~~~~~~~~ RTC  Variables ~~~~~~~~~~~~//
+  constexpr unsigned long clockInterval{ 1000 };
+  unsigned long clockCheck{};
+
+//~~~~~~~~~~ LVGL Declarations ~~~~~~~~~//
   // GUI orientation:
     // 800,480 -> landscape; 480, 800 -> portrait
     Arduino_H7_Video          Display(480, 800, GigaDisplayShield);   // Define output display/rotation
@@ -54,8 +81,36 @@
     lv_obj_t * screen2; // "manual control" screen
 
 void setup(){
+  Serial.begin(9600);
   Display.begin();
   TouchDetector.begin();
+
+  //~~~~~~~~~~ WiFi Setup ~~~~~~~~~~~~//
+    // check for the WiFi module:
+    if (WiFi.status() == WL_NO_SHIELD) {
+      Serial.println("Communication with WiFi module failed!");
+      // don't continue
+      while (true)
+        ;
+    }
+
+    // attempt to connect to WiFi network:
+    while (status != WL_CONNECTED) {
+      Serial.print("Attempting to connect to SSID: ");
+      Serial.println(ssid);
+      // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+      status = WiFi.begin(ssid, pass);
+
+      // wait 10 seconds for connection:
+      delay(10000);
+    }
+
+    Serial.println("Connected to WiFi");
+    printWifiStatus();
+
+  //~~~~~~~~~~ RTC Setup ~~~~~~~~~~~~~//
+    setNtpTime();
+  
 
   // create LVGL display theme and styles
     createLVGLstyles(); //setup declared LVGL styles
@@ -100,6 +155,14 @@ void setup(){
 
 void loop() {
   lv_timer_handler(); // LVGL updater function
+
+  // update clock
+  if (millis() > clockCheck) {
+    Serial.print("System Clock:          ");
+    Serial.println(getLocaltime());
+    clockCheck = millis() + clockInterval;
+  }
+
   delay(5);
 }
 
@@ -380,7 +443,7 @@ void loop() {
   } 
 
 //~~~~~~~~~~~~~~~~ LVGL misc/helper functions ~~~~~~~~~~~~~~~~~~~~~~~~~~//
-  static void createLVGLstyles(){ // setup all global LVGL styles
+  void createLVGLstyles(){ // setup all global LVGL styles
     // basic styles
       lv_style_init(&style_dark_blue);    
       lv_style_set_bg_color(&style_dark_blue, dark_blue);
@@ -468,7 +531,7 @@ void loop() {
   }
 
 //~~~~~~~~~~~~~~~~ LVGL Event Handler functions ~~~~~~~~~~~~~~~~~~~~~~~~//
-  static void switchToggle_event(lv_event_t * e){ // generic switch event handler: grey out icon when "OFF"; increase panel opacity when "ON"
+  void switchToggle_event(lv_event_t * e){ // generic switch event handler: grey out icon when "OFF"; increase panel opacity when "ON"
     lv_obj_t * swtch = lv_event_get_target(e);
     lv_obj_t * panel = lv_obj_get_parent(swtch);
     lv_obj_t * icon = (lv_obj_t * ) lv_event_get_user_data(e);
@@ -483,7 +546,7 @@ void loop() {
     }
   }
 
-  static void switchToggle_eye_event(lv_event_t * e){ // custom switch event handler: eye open/closed symbol based on switch state
+  void switchToggle_eye_event(lv_event_t * e){ // custom switch event handler: eye open/closed symbol based on switch state
     lv_obj_t * swtch = lv_event_get_target(e);
     lv_obj_t * panel = lv_obj_get_parent(swtch);
     lv_obj_t * icon = lv_obj_get_child(panel, 0);
@@ -495,7 +558,7 @@ void loop() {
     }
   }
   
-  static void powerToggle_event(lv_event_t * e){ // power switch event handler: grey out + disable linked buttons when "OFF"
+  void powerToggle_event(lv_event_t * e){ // power switch event handler: grey out + disable linked buttons when "OFF"
     lv_obj_t * pwr_button = lv_event_get_target(e);
     lv_obj_t * other_button = (lv_obj_t * ) lv_event_get_user_data(e);
 
@@ -508,7 +571,7 @@ void loop() {
     }
   } 
 
-  static void slider_event_cb(lv_event_t * e){ // generic slider event handler: display slider value on top of slider
+  void slider_event_cb(lv_event_t * e){ // generic slider event handler: display slider value on top of slider
       lv_obj_t * slider = lv_event_get_target(e);
       lv_obj_t * sliderLabel = (lv_obj_t * ) lv_event_get_user_data(e);
       int sliderValue = (int)lv_slider_get_value(slider);
@@ -537,4 +600,75 @@ void loop() {
     } else {
       lv_scr_load(screen2);
     }
+  }
+
+//~~~~~~~~~~~~~~~~ WiFi/RTC functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+
+  void setNtpTime() {
+    Udp.begin(localPort);
+    sendNTPpacket(timeServer);
+    delay(1000);
+    parseNtpPacket();
+  }
+
+  // send an NTP request to the time server at the given address
+  unsigned long sendNTPpacket(const char* address) {
+    memset(packetBuffer, 0, NTP_PACKET_SIZE);
+    packetBuffer[0] = 0b11100011;  // LI, Version, Mode
+    packetBuffer[1] = 0;           // Stratum, or type of clock
+    packetBuffer[2] = 6;           // Polling Interval
+    packetBuffer[3] = 0xEC;        // Peer Clock Precision
+    // 8 bytes of zero for Root Delay & Root Dispersion
+    packetBuffer[12] = 49;
+    packetBuffer[13] = 0x4E;
+    packetBuffer[14] = 49;
+    packetBuffer[15] = 52;
+
+    Udp.beginPacket(address, 123);  // NTP requests are to port 123
+    Udp.write(packetBuffer, NTP_PACKET_SIZE);
+    Udp.endPacket();
+  }
+
+  unsigned long parseNtpPacket() {
+    if (!Udp.parsePacket())
+      return 0;
+
+    Udp.read(packetBuffer, NTP_PACKET_SIZE);
+    const unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+    const unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+    const unsigned long secsSince1900 = highWord << 16 | lowWord;
+    constexpr unsigned long seventyYears = 2208988800UL;
+    const unsigned long epoch = secsSince1900 - seventyYears;
+    const unsigned long new_epoch = epoch + (3600 * timezone); //multiply the timezone with 3600 (1 hour)
+    set_time(new_epoch);
+    return epoch;
+  }
+
+  String getLocaltime() {
+    char buffer[32];
+    tm t;
+    _rtc_localtime(time(NULL), &t, RTC_FULL_LEAP_YEAR_SUPPORT);
+    strftime(buffer, 32, "%Y-%m-%d %k:%M:%S", &t);
+    String buf = String(buffer);
+    //buf = buf.substring(11, 16); //HH:MM only
+    buf = buf.substring(11, 19); // HH:MM:SS only 
+    return buf;
+    //return String(buffer);
+  }
+
+  void printWifiStatus() {
+    // print the SSID of the network you're attached to:
+    Serial.print("SSID: ");
+    Serial.println(WiFi.SSID());
+
+    // print your board's IP address:
+    IPAddress ip = WiFi.localIP();
+    Serial.print("IP Address: ");
+    Serial.println(ip);
+
+    // print the received signal strength:
+    long rssi = WiFi.RSSI();
+    Serial.print("signal strength (RSSI):");
+    Serial.print(rssi);
+    Serial.println(" dBm");
   }
