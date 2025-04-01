@@ -153,6 +153,7 @@ void setup(){
     setNtpTime();
 
   //~~~~~~~~~~ Create LVGL objects ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+    lv_obj_add_style(screen1, &style_default_toplevel, 0);
     grid_base =  createGrid1(screen1); // create an LVGL Grid layout
     topbar =     createTopbar(grid_base); // create GUI Topbar Panel (Page 1)
     buttonbar =  createButtonBar(grid_base); // create button/tab topbar
@@ -160,10 +161,11 @@ void setup(){
     grid_tab1 =  createGrid2(grid_base); // create a subset grid for "lights" tab
     grid_tab2 =  createGrid3(grid_base); // create a subset grid for "music" tab
     grid_tab3 =  createGrid4(grid_base); // create a subset grid for "AC" tab
-    grid_tab4 =  createGrid2(grid_base); // create a subset grid for "INFO" tab
+    grid_tab4 =  createGrid5(grid_base); // create a subset grid for "INFO" tab
+
     
-    lv_obj_add_state(tab4_btn, LV_STATE_CHECKED);
-    lv_obj_add_style(screen1, &style_default_toplevel, 0);
+    lv_obj_add_state(tab1_btn, LV_STATE_CHECKED);
+    lv_event_send(tab1_btn, LV_EVENT_CLICKED, NULL);
 }
 
 void loop() {
@@ -308,6 +310,7 @@ void loop() {
 
   lv_obj_t * createGrid4(lv_obj_t * topLevelGrid){ // Create a Sub-Grid ("AC" tab)
     lv_obj_t * label;
+    lv_obj_t * button;
     lv_obj_t * grid = lv_obj_create(topLevelGrid);
     lv_obj_add_style(grid, &style_noBorder, 0);
     lv_obj_add_style(grid, &style_periwinkle, LV_STATE_SCROLLED | LV_PART_SCROLLBAR);
@@ -327,7 +330,7 @@ void loop() {
                         LV_GRID_ALIGN_CENTER, 0, 1);     //row 
 
       label = lv_label_create(grid);
-      lv_label_set_text(label, "Currently: 68");
+      lv_label_set_text(label, "Currently: 68 F");
       lv_obj_add_style(label, &style_subtitle_label, 0);
       lv_obj_set_grid_cell(label, LV_GRID_ALIGN_CENTER, 0, 2,    //column
                         LV_GRID_ALIGN_START, 1, 1);     //row 
@@ -356,7 +359,7 @@ void loop() {
     // create a slider 
       lv_obj_t * slider = lv_slider_create(grid);
       lv_obj_set_grid_cell(slider, LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
-      lv_obj_set_size(slider, Display.width() - 100, 100);
+      lv_obj_set_size(slider, Display.width() - 240, 100);
       lv_obj_add_style(slider, &style_periwinkle, LV_PART_KNOB | LV_STATE_PRESSED);
       lv_obj_add_style(slider, &style_periwinkle, LV_PART_INDICATOR | LV_STATE_PRESSED);
       lv_obj_add_style(slider, &style_slider_knob, LV_PART_KNOB);
@@ -367,15 +370,67 @@ void loop() {
       lv_obj_set_style_pad_right(slider, -20, LV_PART_KNOB);
       lv_obj_add_flag(slider, LV_OBJ_FLAG_ADV_HITTEST); // only adjustable via dragging knob; disable click-jump-to-value behavior
       
-
       label = lv_label_create(slider);
       lv_obj_add_style(label, &style_header_1, 0);
-      lv_label_set_text(label, "68");
+      lv_label_set_text(label, "68 F");
       lv_obj_center(label);
 
       lv_obj_add_event_cb(slider, slider_event_cb, LV_EVENT_VALUE_CHANGED, label);   
       lv_obj_add_event_cb(slider, ACslider_cb_event, LV_EVENT_RELEASED, statusLabel);   
       lv_slider_set_value(slider, 68, LV_ANIM_OFF);
+      lv_event_send(slider, LV_EVENT_VALUE_CHANGED, NULL);
+
+    // create slider buttons
+      button = lv_btn_create(grid);
+      lv_obj_set_grid_cell(button, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
+      lv_obj_add_style(button, &style_inactive, LV_STATE_DEFAULT);
+      lv_obj_add_style(button, &style_periwinkle, LV_STATE_PRESSED);
+      lv_obj_set_size(button, 80, 100);
+      lv_obj_set_style_radius(button, 20, 0);
+      lv_obj_add_event_cb(button, ACdown_cb_event, LV_EVENT_CLICKED, slider);
+      label = lv_label_create(button);
+      lv_label_set_text(label, LV_SYMBOL_LEFT);
+      lv_obj_set_style_text_font(label, &lv_font_montserrat_32, LV_PART_MAIN);
+      lv_obj_center(label); 
+
+      button = lv_btn_create(grid);
+      lv_obj_set_grid_cell(button, LV_GRID_ALIGN_END, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
+      lv_obj_add_style(button, &style_inactive, LV_STATE_DEFAULT);
+      lv_obj_add_style(button, &style_periwinkle, LV_STATE_PRESSED);
+      lv_obj_set_size(button, 80, 100);
+      lv_obj_set_style_radius(button, 20, 0);
+      lv_obj_add_event_cb(button, ACup_cb_event, LV_EVENT_CLICKED, slider);
+      label = lv_label_create(button);
+      lv_label_set_text(label, LV_SYMBOL_RIGHT);
+      lv_obj_set_style_text_font(label, &lv_font_montserrat_32, LV_PART_MAIN);
+      lv_obj_center(label); 
+
+    return grid;
+  }  
+
+  lv_obj_t * createGrid5(lv_obj_t * topLevelGrid){ // Create a Sub-Grid ("Info" tab)
+    lv_obj_t * label;
+    lv_obj_t * grid = lv_obj_create(topLevelGrid);
+    lv_obj_add_style(grid, &style_noBorder, 0);
+    lv_obj_add_style(grid, &style_periwinkle, LV_STATE_SCROLLED | LV_PART_SCROLLBAR);
+    lv_obj_set_style_radius(grid, 0, 0);
+    lv_obj_set_scroll_dir(grid, LV_DIR_VER);
+    //static lv_coord_t col_dsc[] = {240, LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST}; // create columns
+    //static lv_coord_t row_dsc[] = {70, 80, LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST}; // create rows
+    //lv_obj_set_grid_dsc_array(grid, col_dsc, row_dsc);
+    lv_obj_set_grid_cell(grid, LV_GRID_ALIGN_STRETCH, 0, 1,    //column
+                      LV_GRID_ALIGN_STRETCH, 2, 1);     //row
+
+    // create label
+      label = lv_label_create(grid);
+      lv_label_set_text(label, " Home-Bot 2000: Home Automation GUI\n\n"
+                              " Software Version: xx.xx.xxxxxxxxxx\n"
+                              " Hardware Kit Version: ~~~.~~~~~~\n\n"
+                              " Produced by: xxxxxxxxxxx\n"
+                              " Special Thanks: xxxxxxx");
+      lv_obj_add_style(label, &style_subtitle_label, 0);
+      lv_obj_align(label, LV_ALIGN_LEFT_MID, 0, 0);
+      lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN);
 
     return grid;
   }  
@@ -443,6 +498,7 @@ void loop() {
       lv_obj_add_event_cb(tab1_btn, pageTab1_cb_event, LV_EVENT_CLICKED, NULL);
       lv_obj_add_event_cb(tab2_btn, pageTab2_cb_event, LV_EVENT_CLICKED, NULL); 
       lv_obj_add_event_cb(tab3_btn, pageTab3_cb_event, LV_EVENT_CLICKED, NULL); 
+      lv_obj_add_event_cb(tab4_btn, pageTab4_cb_event, LV_EVENT_CLICKED, NULL); 
 
     return buttonGrid;
   }
@@ -672,31 +728,35 @@ void loop() {
     }
   }
   void slider_event_cb(lv_event_t * e){ // generic slider event handler: display slider value on top of slider
-      int low_bound = 50;
-      int upper_bound = 90;
-      int buffer = 1; 
-      
-      lv_obj_t * slider = lv_event_get_target(e);
-      lv_obj_t * sliderLabel = (lv_obj_t * ) lv_event_get_user_data(e);
-      int sliderValue = (int)lv_slider_get_value(slider);
+    int low_bound = 50;
+    int upper_bound = 90;
+    int buffer = 1; 
+    char buf[8];
+    
+    lv_obj_t * slider = lv_event_get_target(e);
+    lv_obj_t * sliderLabel = (lv_obj_t * ) lv_event_get_user_data(e);
+    int sliderValue = (int)lv_slider_get_value(slider);
 
-      // fix slider visual bug
-      if (sliderValue < low_bound) {
-        lv_slider_set_value(slider, low_bound, LV_ANIM_OFF);
-        sliderValue = (int)lv_slider_get_value(slider);
-      } else if (sliderValue > upper_bound) {
-        lv_slider_set_value(slider, upper_bound, LV_ANIM_OFF);
-        sliderValue = (int)lv_slider_get_value(slider);
-      }
-      lv_slider_set_range(slider, (low_bound - buffer), (upper_bound + buffer));
+    // fix slider visual bug
+    if (sliderValue < low_bound) {
+      lv_slider_set_value(slider, low_bound, LV_ANIM_OFF);
+      sliderValue = (int)lv_slider_get_value(slider);
+    } else if (sliderValue > upper_bound) {
+      lv_slider_set_value(slider, upper_bound, LV_ANIM_OFF);
+      sliderValue = (int)lv_slider_get_value(slider);
+    }
+    lv_slider_set_range(slider, (low_bound - buffer), (upper_bound + buffer));
 
-      lv_label_set_text_fmt(sliderLabel, "%"LV_PRId32, lv_slider_get_value(slider));
+    lv_snprintf(buf, sizeof(buf), "%d F", (int)lv_slider_get_value(slider));
+    lv_label_set_text(sliderLabel, buf);
 
-      // if (sliderValue > 45) {
-      //   lv_obj_set_style_text_color(sliderLabel, lv_color_white(), 0);
-      // } else {
-      //   lv_obj_set_style_text_color(sliderLabel, taupe, 0);
-      // }
+    //lv_label_set_text_fmt(sliderLabel, "%"LV_PRId32, lv_slider_get_value(slider));
+
+    // if (sliderValue > 45) {
+    //   lv_obj_set_style_text_color(sliderLabel, lv_color_white(), 0);
+    // } else {
+    //   lv_obj_set_style_text_color(sliderLabel, taupe, 0);
+    // }
   }
   void pageTab1_cb_event(lv_event_t * e){ // switch to tab 1
     lv_obj_clear_flag(grid_tab1, LV_OBJ_FLAG_HIDDEN);
@@ -731,6 +791,17 @@ void loop() {
     lv_obj_add_state(tab3_btn, LV_STATE_CHECKED);
     lv_obj_clear_state(tab4_btn, LV_STATE_CHECKED);
   } 
+  void pageTab4_cb_event(lv_event_t * e){ // switch to tab 1
+    lv_obj_add_flag(grid_tab1, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(grid_tab2, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(grid_tab3, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(grid_tab4, LV_OBJ_FLAG_HIDDEN);
+
+    lv_obj_clear_state(tab1_btn, LV_STATE_CHECKED);
+    lv_obj_clear_state(tab2_btn, LV_STATE_CHECKED);
+    lv_obj_clear_state(tab3_btn, LV_STATE_CHECKED);
+    lv_obj_add_state(tab4_btn, LV_STATE_CHECKED);
+  } 
   void ACpwrButton_cb_event(lv_event_t * e){ // generic slider event handler: display slider value on top of slider
     lv_obj_t * btn = lv_event_get_target(e);
     lv_obj_t * slider = lv_obj_get_child(lv_obj_get_parent(btn), 4);
@@ -755,15 +826,33 @@ void loop() {
     }
 
     if (sliderValue < 68){
-      lv_label_set_text(status, "Heating");
+      lv_label_set_text(status, "Cooling");
       lv_obj_set_style_text_color(status, yellow, NULL);
     } else if (sliderValue > 68){
-      lv_label_set_text(status, "Cooling");
+      lv_label_set_text(status, "Heating");
       lv_obj_set_style_text_color(status, periwinkle, NULL);
     } else {
       lv_label_set_text(status, "Active Hold");
       lv_obj_set_style_text_color(status, white, NULL);
     }
+  }
+  void ACdown_cb_event(lv_event_t * e){ // generic slider event handler: display slider value on top of slider
+    lv_obj_t * button = lv_event_get_target(e);
+    lv_obj_t * slider = (lv_obj_t * ) lv_event_get_user_data(e);
+    int sliderValue = (int)lv_slider_get_value(slider);
+
+    lv_slider_set_value(slider, sliderValue-1, LV_ANIM_OFF);
+    lv_event_send(slider, LV_EVENT_VALUE_CHANGED, NULL);
+    lv_event_send(slider, LV_EVENT_RELEASED, NULL);
+  }
+  void ACup_cb_event(lv_event_t * e){ // generic slider event handler: display slider value on top of slider
+    lv_obj_t * button = lv_event_get_target(e);
+    lv_obj_t * slider = (lv_obj_t * ) lv_event_get_user_data(e);
+    int sliderValue = (int)lv_slider_get_value(slider);
+
+    lv_slider_set_value(slider, sliderValue+1, LV_ANIM_OFF);
+    lv_event_send(slider, LV_EVENT_VALUE_CHANGED, NULL);
+    lv_event_send(slider, LV_EVENT_RELEASED, NULL);
   }
 
 //~~~~~~~~~~~~~~~~ WiFi/RTC functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
