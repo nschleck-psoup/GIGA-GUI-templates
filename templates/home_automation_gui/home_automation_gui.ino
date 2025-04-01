@@ -88,6 +88,9 @@
     lv_obj_t * topbar;    // header bar
     lv_obj_t * buttonbar; // sub-header tab button bar 
     lv_obj_t * grid_tab1; // "lights" tab grid
+    lv_obj_t * grid_tab2; // "music" tab grid
+    lv_obj_t * grid_tab3; // "AC" tab grid
+    lv_obj_t * grid_tab4; // "Info" tab grid
 
     lv_obj_t * tab1_btn;
     lv_obj_t * tab2_btn;
@@ -150,15 +153,17 @@ void setup(){
     setNtpTime();
 
   //~~~~~~~~~~ Create LVGL objects ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-    grid_base =       createGrid1(screen1); // create an LVGL Grid layout
+    grid_base =  createGrid1(screen1); // create an LVGL Grid layout
     topbar =     createTopbar(grid_base); // create GUI Topbar Panel (Page 1)
     buttonbar =  createButtonBar(grid_base); // create button/tab topbar
 
-    grid_tab1 =      createGrid2(grid_base); // create a subset grid for "lights" tab
+    grid_tab1 =  createGrid2(grid_base); // create a subset grid for "lights" tab
+    grid_tab2 =  createGrid3(grid_base); // create a subset grid for "music" tab
+    grid_tab3 =  createGrid4(grid_base); // create a subset grid for "AC" tab
+    grid_tab4 =  createGrid2(grid_base); // create a subset grid for "INFO" tab
     
-    lv_obj_add_state(tab1_btn, LV_STATE_CHECKED);
+    lv_obj_add_state(tab4_btn, LV_STATE_CHECKED);
     lv_obj_add_style(screen1, &style_default_toplevel, 0);
-
 }
 
 void loop() {
@@ -194,18 +199,17 @@ void loop() {
     return grid;
   }
 
-  lv_obj_t * createGrid2(lv_obj_t * topLevelGrid){ // Create a Sub-Grid (Screen 1 Switch/Slider Panels)
+  lv_obj_t * createGrid2(lv_obj_t * topLevelGrid){ // Create a Sub-Grid ("lights" tab)
     lv_obj_t * grid = lv_obj_create(topLevelGrid);
     lv_obj_add_style(grid, &style_noBorder, 0);
     lv_obj_add_style(grid, &style_periwinkle, LV_STATE_SCROLLED | LV_PART_SCROLLBAR);
+    lv_obj_set_style_radius(grid, 0, 0);
+    lv_obj_set_scroll_dir(grid, LV_DIR_VER);
     static lv_coord_t col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST}; // create columns
     static lv_coord_t row_dsc[] = {130, 130, 130, LV_GRID_TEMPLATE_LAST}; // create rows
-
     lv_obj_set_grid_dsc_array(grid, col_dsc, row_dsc);
     lv_obj_set_grid_cell(grid, LV_GRID_ALIGN_STRETCH, 0, 1,    //column
                       LV_GRID_ALIGN_STRETCH, 2, 1);     //row
-    lv_obj_set_style_radius(grid, 0, 0);
-    lv_obj_set_scroll_dir(grid, LV_DIR_VER);
 
     // create switch panels
     createSwitch(grid, 0, 0, "Office", LV_SYMBOL_EYE_OPEN);
@@ -217,6 +221,164 @@ void loop() {
 
     return grid;
   }
+
+  lv_obj_t * createGrid3(lv_obj_t * topLevelGrid){ // Create a Sub-Grid ("music" tab)
+    lv_obj_t * label;
+    lv_obj_t * grid = lv_obj_create(topLevelGrid);
+    lv_obj_add_style(grid, &style_noBorder, 0);
+    lv_obj_add_style(grid, &style_periwinkle, LV_STATE_SCROLLED | LV_PART_SCROLLBAR);
+    lv_obj_set_style_radius(grid, 0, 0);
+    lv_obj_set_scroll_dir(grid, LV_DIR_VER);
+    static lv_coord_t col_dsc[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST}; // create columns
+    static lv_coord_t row_dsc[] = {LV_GRID_FR(4), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST}; // create rows
+    lv_obj_set_grid_dsc_array(grid, col_dsc, row_dsc);
+    lv_obj_set_grid_cell(grid, LV_GRID_ALIGN_STRETCH, 0, 1,    //column
+                      LV_GRID_ALIGN_STRETCH, 2, 1);     //row
+
+    // create labels
+      label = lv_label_create(grid);
+      lv_label_set_text(label, LV_SYMBOL_AUDIO "  Now Playing");
+      lv_obj_add_style(label, &style_subtitle_label, 0);
+      lv_obj_set_grid_cell(label, LV_GRID_ALIGN_START, 0, 1,    //column
+                        LV_GRID_ALIGN_START, 0, 1);     //row    
+
+      label = lv_label_create(grid);
+      lv_label_set_text(label, "Something About Us");
+      lv_obj_add_style(label, &style_header_1, 0);
+      lv_obj_set_grid_cell(label, LV_GRID_ALIGN_CENTER, 0, 1,    //column
+                        LV_GRID_ALIGN_CENTER, 1, 1);     //row    
+      
+      label = lv_label_create(grid);
+      lv_label_set_text(label, "Daft Punk");
+      lv_obj_add_style(label, &style_subtitle_label, 0);
+      lv_obj_set_grid_cell(label, LV_GRID_ALIGN_CENTER, 0, 1,    //column
+                        LV_GRID_ALIGN_CENTER, 2, 1);     //row    
+
+      label = lv_label_create(grid);
+      lv_label_set_text(label, "Discovery");
+      lv_obj_add_style(label, &style_subtitle_label, 0);
+      lv_obj_set_grid_cell(label, LV_GRID_ALIGN_CENTER, 0, 1,    //column
+                        LV_GRID_ALIGN_START, 3, 1);     //row    
+
+
+    // create buttons
+      lv_obj_t * playBtn = lv_btn_create(grid);
+      lv_obj_set_grid_cell(playBtn, LV_GRID_ALIGN_CENTER, 0, 1,    //column
+                        LV_GRID_ALIGN_CENTER, 0, 1);     //row
+      lv_obj_add_flag(playBtn, LV_OBJ_FLAG_CHECKABLE);
+      lv_obj_add_style(playBtn, &style_button_toggled, LV_STATE_CHECKED);
+      lv_obj_add_style(playBtn, &style_inactive, LV_STATE_DEFAULT);
+      lv_obj_add_style(playBtn, &style_periwinkle, LV_STATE_PRESSED);
+      lv_obj_set_size(playBtn,120,120);
+      lv_obj_set_style_radius(playBtn,60,0);
+      lv_obj_add_event_cb(playBtn, playButton_cb_event, LV_EVENT_CLICKED, 0);
+      label = lv_label_create(playBtn);
+      lv_label_set_text(label, LV_SYMBOL_PLAY);
+      lv_obj_set_style_text_font(label, &lv_font_montserrat_38, LV_PART_MAIN);
+      lv_obj_center(label);   
+
+      lv_obj_t * backBtn = lv_btn_create(grid);
+      lv_obj_set_grid_cell(backBtn, LV_GRID_ALIGN_CENTER, 0, 1,    //column
+                         LV_GRID_ALIGN_CENTER, 0, 1);     //row
+      lv_obj_set_style_translate_x(backBtn, lv_pct(-160), NULL);
+      lv_obj_add_style(backBtn, &style_inactive, LV_STATE_DEFAULT);
+      lv_obj_add_style(backBtn, &style_periwinkle, LV_STATE_PRESSED);
+      lv_obj_set_size(backBtn, 90, 90);
+      lv_obj_set_style_radius(backBtn, 45, 0);
+      label = lv_label_create(backBtn);
+      lv_label_set_text(label, LV_SYMBOL_PREV);
+      lv_obj_set_style_text_font(label, &lv_font_montserrat_30, LV_PART_MAIN);
+      lv_obj_center(label);   
+
+      lv_obj_t * nextBtn = lv_btn_create(grid);
+      lv_obj_set_grid_cell(nextBtn, LV_GRID_ALIGN_CENTER, 0, 1,    //column
+                         LV_GRID_ALIGN_CENTER, 0, 1);     //row
+      lv_obj_set_style_translate_x(nextBtn, lv_pct(160), NULL);
+      lv_obj_add_style(nextBtn, &style_inactive, LV_STATE_DEFAULT);
+      lv_obj_add_style(nextBtn, &style_periwinkle, LV_STATE_PRESSED);
+      lv_obj_set_size(nextBtn, 90, 90);
+      lv_obj_set_style_radius(nextBtn, 45, 0);
+      label = lv_label_create(nextBtn);
+      lv_label_set_text(label, LV_SYMBOL_NEXT);
+      lv_obj_set_style_text_font(label, &lv_font_montserrat_30, LV_PART_MAIN);
+      lv_obj_center(label);   
+
+    return grid;
+  }
+
+  lv_obj_t * createGrid4(lv_obj_t * topLevelGrid){ // Create a Sub-Grid ("AC" tab)
+    lv_obj_t * label;
+    lv_obj_t * grid = lv_obj_create(topLevelGrid);
+    lv_obj_add_style(grid, &style_noBorder, 0);
+    lv_obj_add_style(grid, &style_periwinkle, LV_STATE_SCROLLED | LV_PART_SCROLLBAR);
+    lv_obj_set_style_radius(grid, 0, 0);
+    lv_obj_set_scroll_dir(grid, LV_DIR_VER);
+    static lv_coord_t col_dsc[] = {240, LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST}; // create columns
+    static lv_coord_t row_dsc[] = {70, 80, LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST}; // create rows
+    lv_obj_set_grid_dsc_array(grid, col_dsc, row_dsc);
+    lv_obj_set_grid_cell(grid, LV_GRID_ALIGN_STRETCH, 0, 1,    //column
+                      LV_GRID_ALIGN_STRETCH, 2, 1);     //row
+
+    // create labels
+      label = lv_label_create(grid);
+      lv_label_set_text(label, "Climate Control");
+      lv_obj_add_style(label, &style_header_1, 0);
+      lv_obj_set_grid_cell(label, LV_GRID_ALIGN_CENTER, 0, 2,    //column
+                        LV_GRID_ALIGN_CENTER, 0, 1);     //row 
+
+      label = lv_label_create(grid);
+      lv_label_set_text(label, "Currently: 68");
+      lv_obj_add_style(label, &style_subtitle_label, 0);
+      lv_obj_set_grid_cell(label, LV_GRID_ALIGN_CENTER, 0, 2,    //column
+                        LV_GRID_ALIGN_START, 1, 1);     //row 
+      lv_obj_t * statusLabel = lv_label_create(grid);
+      lv_label_set_text(statusLabel, "OFF");
+      lv_obj_add_style(statusLabel, &style_subtitle_label, 0);
+      lv_obj_set_grid_cell(statusLabel, LV_GRID_ALIGN_CENTER, 0, 2,    //column
+                        LV_GRID_ALIGN_CENTER, 1, 1);     //row           
+
+    // create a power button
+      lv_obj_t * pwrBtn = lv_btn_create(grid);
+      lv_obj_set_grid_cell(pwrBtn, LV_GRID_ALIGN_CENTER, 0, 1,    //column
+                        LV_GRID_ALIGN_CENTER, 0, 2);     //row
+      lv_obj_add_flag(pwrBtn, LV_OBJ_FLAG_CHECKABLE);
+      lv_obj_add_style(pwrBtn, &style_button_toggled, LV_STATE_CHECKED);
+      lv_obj_add_style(pwrBtn, &style_inactive, LV_STATE_DEFAULT);
+      lv_obj_add_style(pwrBtn, &style_periwinkle, LV_STATE_PRESSED);
+      lv_obj_set_size(pwrBtn, 120, 120);
+      lv_obj_set_style_radius(pwrBtn, 60, 0);
+      lv_obj_add_event_cb(pwrBtn, ACpwrButton_cb_event, LV_EVENT_CLICKED, statusLabel);
+      label = lv_label_create(pwrBtn);
+      lv_label_set_text(label, LV_SYMBOL_POWER);
+      lv_obj_set_style_text_font(label, &lv_font_montserrat_38, LV_PART_MAIN);
+      lv_obj_center(label); 
+
+    // create a slider 
+      lv_obj_t * slider = lv_slider_create(grid);
+      lv_obj_set_grid_cell(slider, LV_GRID_ALIGN_CENTER, 0, 2, LV_GRID_ALIGN_CENTER, 2, 1);
+      lv_obj_set_size(slider, Display.width() - 100, 100);
+      lv_obj_add_style(slider, &style_periwinkle, LV_PART_KNOB | LV_STATE_PRESSED);
+      lv_obj_add_style(slider, &style_periwinkle, LV_PART_INDICATOR | LV_STATE_PRESSED);
+      lv_obj_add_style(slider, &style_slider_knob, LV_PART_KNOB);
+      lv_obj_set_style_radius(slider, 20, LV_PART_KNOB);
+      lv_obj_set_style_radius(slider, 20, LV_PART_INDICATOR);
+      lv_obj_set_style_radius(slider, 20, LV_PART_MAIN);
+      lv_obj_set_style_pad_left(slider, -20, LV_PART_KNOB);
+      lv_obj_set_style_pad_right(slider, -20, LV_PART_KNOB);
+      lv_obj_add_flag(slider, LV_OBJ_FLAG_ADV_HITTEST); // only adjustable via dragging knob; disable click-jump-to-value behavior
+      
+
+      label = lv_label_create(slider);
+      lv_obj_add_style(label, &style_header_1, 0);
+      lv_label_set_text(label, "68");
+      lv_obj_center(label);
+
+      lv_obj_add_event_cb(slider, slider_event_cb, LV_EVENT_VALUE_CHANGED, label);   
+      lv_obj_add_event_cb(slider, ACslider_cb_event, LV_EVENT_RELEASED, statusLabel);   
+      lv_slider_set_value(slider, 68, LV_ANIM_OFF);
+
+    return grid;
+  }  
 
   lv_obj_t * createTopbar(lv_obj_t * parent){
     lv_obj_t * topbar;
@@ -280,6 +442,7 @@ void loop() {
 
       lv_obj_add_event_cb(tab1_btn, pageTab1_cb_event, LV_EVENT_CLICKED, NULL);
       lv_obj_add_event_cb(tab2_btn, pageTab2_cb_event, LV_EVENT_CLICKED, NULL); 
+      lv_obj_add_event_cb(tab3_btn, pageTab3_cb_event, LV_EVENT_CLICKED, NULL); 
 
     return buttonGrid;
   }
@@ -335,6 +498,9 @@ void loop() {
     lv_obj_set_grid_cell(swtch, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_END, 0, 1);
     lv_obj_set_size(swtch, 100, 40);
     lv_obj_add_style(swtch, &style_periwinkle, LV_PART_INDICATOR | LV_STATE_CHECKED);
+    lv_obj_set_style_border_width(swtch, 2, LV_PART_INDICATOR | LV_PART_MAIN);
+    lv_obj_set_style_border_color(swtch, white, LV_PART_INDICATOR | LV_PART_MAIN);
+    
     lv_obj_add_event_cb(swtch, switchToggle_event, LV_EVENT_CLICKED, icon);
 
     return swtch; // return switch object, not entire switch panel
@@ -495,44 +661,48 @@ void loop() {
       lv_obj_set_style_text_color(icon, white, 0);
     }
   }
+  void playButton_cb_event(lv_event_t * e){ // custom switch event handler: eye open/closed symbol based on switch state
+    lv_obj_t * btn = lv_event_get_target(e);
+    lv_obj_t * icon = lv_obj_get_child(btn, 0);
 
-  void switchToggle_eye_event(lv_event_t * e){ // custom switch event handler: eye open/closed symbol based on switch state
-    lv_obj_t * swtch = lv_event_get_target(e);
-    lv_obj_t * panel = lv_obj_get_parent(swtch);
-    lv_obj_t * icon = lv_obj_get_child(panel, 0);
-
-    if (lv_obj_has_state(swtch, LV_STATE_CHECKED)){
-      lv_label_set_text(icon, LV_SYMBOL_EYE_OPEN);
+    if (lv_obj_has_state(btn, LV_STATE_CHECKED)){
+      lv_label_set_text(icon, LV_SYMBOL_PAUSE);
     } else {
-      lv_label_set_text(icon, LV_SYMBOL_EYE_CLOSE);
+      lv_label_set_text(icon, LV_SYMBOL_PLAY);
     }
   }
-
   void slider_event_cb(lv_event_t * e){ // generic slider event handler: display slider value on top of slider
+      int low_bound = 50;
+      int upper_bound = 90;
+      int buffer = 1; 
+      
       lv_obj_t * slider = lv_event_get_target(e);
       lv_obj_t * sliderLabel = (lv_obj_t * ) lv_event_get_user_data(e);
       int sliderValue = (int)lv_slider_get_value(slider);
 
       // fix slider visual bug
-      if (sliderValue < 0) {
-        lv_slider_set_value(slider, 0, LV_ANIM_OFF);
+      if (sliderValue < low_bound) {
+        lv_slider_set_value(slider, low_bound, LV_ANIM_OFF);
         sliderValue = (int)lv_slider_get_value(slider);
-      } else if (sliderValue > 100) {
-        lv_slider_set_value(slider, 100, LV_ANIM_OFF);
+      } else if (sliderValue > upper_bound) {
+        lv_slider_set_value(slider, upper_bound, LV_ANIM_OFF);
         sliderValue = (int)lv_slider_get_value(slider);
       }
+      lv_slider_set_range(slider, (low_bound - buffer), (upper_bound + buffer));
 
       lv_label_set_text_fmt(sliderLabel, "%"LV_PRId32, lv_slider_get_value(slider));
 
-      if (sliderValue > 45) {
-        lv_obj_set_style_text_color(sliderLabel, lv_color_white(), 0);
-      } else {
-        lv_obj_set_style_text_color(sliderLabel, taupe, 0);
-      }
+      // if (sliderValue > 45) {
+      //   lv_obj_set_style_text_color(sliderLabel, lv_color_white(), 0);
+      // } else {
+      //   lv_obj_set_style_text_color(sliderLabel, taupe, 0);
+      // }
   }
-
   void pageTab1_cb_event(lv_event_t * e){ // switch to tab 1
     lv_obj_clear_flag(grid_tab1, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(grid_tab2, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(grid_tab3, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(grid_tab4, LV_OBJ_FLAG_HIDDEN);
 
     lv_obj_add_state(tab1_btn, LV_STATE_CHECKED);
     lv_obj_clear_state(tab2_btn, LV_STATE_CHECKED);
@@ -541,14 +711,60 @@ void loop() {
   } 
   void pageTab2_cb_event(lv_event_t * e){ // switch to tab 1
     lv_obj_add_flag(grid_tab1, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(grid_tab2, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(grid_tab3, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(grid_tab4, LV_OBJ_FLAG_HIDDEN);
 
     lv_obj_clear_state(tab1_btn, LV_STATE_CHECKED);
     lv_obj_add_state(tab2_btn, LV_STATE_CHECKED);
     lv_obj_clear_state(tab3_btn, LV_STATE_CHECKED);
     lv_obj_clear_state(tab4_btn, LV_STATE_CHECKED);
-
   } 
+  void pageTab3_cb_event(lv_event_t * e){ // switch to tab 1
+    lv_obj_add_flag(grid_tab1, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(grid_tab2, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(grid_tab3, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(grid_tab4, LV_OBJ_FLAG_HIDDEN);
 
+    lv_obj_clear_state(tab1_btn, LV_STATE_CHECKED);
+    lv_obj_clear_state(tab2_btn, LV_STATE_CHECKED);
+    lv_obj_add_state(tab3_btn, LV_STATE_CHECKED);
+    lv_obj_clear_state(tab4_btn, LV_STATE_CHECKED);
+  } 
+  void ACpwrButton_cb_event(lv_event_t * e){ // generic slider event handler: display slider value on top of slider
+    lv_obj_t * btn = lv_event_get_target(e);
+    lv_obj_t * slider = lv_obj_get_child(lv_obj_get_parent(btn), 4);
+    lv_obj_t * status = (lv_obj_t * ) lv_event_get_user_data(e);
+
+    if (lv_obj_has_state(btn, LV_STATE_CHECKED)){
+      //lv_label_set_text(status, LV_SYMBOL_PAUSE);
+      lv_event_send(slider, LV_EVENT_RELEASED, NULL);
+    } else {
+      lv_label_set_text(status, "OFF");
+      lv_obj_set_style_text_color(status, white, NULL);
+    }
+  }
+  void ACslider_cb_event(lv_event_t * e){ // generic slider event handler: display slider value on top of slider
+    lv_obj_t * slider = lv_event_get_target(e);
+    int sliderValue = (int)lv_slider_get_value(slider);
+    lv_obj_t * status = (lv_obj_t * ) lv_event_get_user_data(e);
+    lv_obj_t * pwrBtn = lv_obj_get_child(lv_obj_get_parent(slider), 3);
+
+    if (!lv_obj_has_state(pwrBtn, LV_STATE_CHECKED)){
+      return;
+    }
+
+    if (sliderValue < 68){
+      lv_label_set_text(status, "Heating");
+      lv_obj_set_style_text_color(status, yellow, NULL);
+    } else if (sliderValue > 68){
+      lv_label_set_text(status, "Cooling");
+      lv_obj_set_style_text_color(status, periwinkle, NULL);
+    } else {
+      lv_label_set_text(status, "Active Hold");
+      lv_obj_set_style_text_color(status, white, NULL);
+    }
+  }
 
 //~~~~~~~~~~~~~~~~ WiFi/RTC functions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
