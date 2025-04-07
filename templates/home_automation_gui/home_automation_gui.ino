@@ -827,10 +827,10 @@ void loop() {
 
     if (sliderValue < 68){
       lv_label_set_text(status, "Cooling");
-      lv_obj_set_style_text_color(status, yellow, NULL);
+      lv_obj_set_style_text_color(status, periwinkle, NULL);
     } else if (sliderValue > 68){
       lv_label_set_text(status, "Heating");
-      lv_obj_set_style_text_color(status, periwinkle, NULL);
+      lv_obj_set_style_text_color(status, yellow, NULL);
     } else {
       lv_label_set_text(status, "Active Hold");
       lv_obj_set_style_text_color(status, white, NULL);
